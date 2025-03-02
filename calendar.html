@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,6 +31,38 @@
             font-size: 2.5em;
         }
 
+        /* 年份切换控件样式 */
+        .year-control {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .year-control button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background-color 0.3s;
+        }
+
+        .year-control button:hover {
+            background-color: #1976D2;
+        }
+
+        .year-control .year-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+            min-width: 120px;
+            text-align: center;
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -41,7 +74,7 @@
             background: white;
             border-radius: 10px;
             padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .month-name {
@@ -122,6 +155,23 @@
             font-weight: bold;
         }
 
+        /* 今天日期的样式 */
+        .day.today {
+            background-color: #e3f2fd;
+            border: 2px solid #2196F3;
+            position: relative;
+        }
+
+        .day.today::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.7em;
+            color: #2196F3;
+            font-weight: bold;
+        }
+
         /* 月视图特定样式 */
         .month-view .days {
             gap: 8px;
@@ -176,7 +226,7 @@
             padding: 20px;
             margin-bottom: 0;
             background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
             position: relative;
@@ -186,7 +236,8 @@
             flex-grow: 1;
             text-align: center;
             font-size: 1.8em;
-            margin: 0 60px; /* 为返回按钮留出空间 */
+            margin: 0 60px;
+            /* 为返回按钮留出空间 */
         }
 
         #monthModal .back-button {
@@ -232,7 +283,7 @@
             width: 90%;
             max-width: 800px;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .schedule-list {
@@ -272,6 +323,7 @@
             .calendar-grid {
                 grid-template-columns: 1fr;
             }
+
             .modal-content {
                 width: 95%;
                 margin: 20px auto;
@@ -290,7 +342,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: all 0.3s;
             display: flex;
             align-items: center;
@@ -301,7 +353,7 @@
         .print-button:hover {
             background-color: #1976D2;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .print-button::before {
@@ -323,6 +375,16 @@
 
             .container {
                 max-width: none;
+            }
+
+            /* 打印时隐藏今天标识 */
+            .day.today {
+                background-color: transparent;
+                border: 1px solid #eee;
+            }
+
+            .day.today::after {
+                display: none;
             }
 
             h1 {
@@ -381,8 +443,19 @@
             /* 隐藏不需要打印的元素 */
             .print-button,
             .modal,
-            .day:hover {
+            .day:hover,
+            .year-control button {
                 display: none !important;
+            }
+
+            /* 调整年份显示样式 */
+            .year-control {
+                margin-bottom: 10px;
+            }
+
+            .year-control .year-display {
+                font-size: 24px;
+                min-width: auto;
             }
 
             /* 移除交互效果 */
@@ -396,9 +469,14 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>2025 年日历</h1>
+        <div class="year-control">
+            <button onclick="changeYear(-1)">◀ 上一年</button>
+            <span class="year-display" id="currentYear">2025年</span>
+            <button onclick="changeYear(1)">下一年 ▶</button>
+        </div>
         <div id="calendar" class="calendar-grid"></div>
     </div>
 
@@ -432,8 +510,17 @@
     </div>
 
     <script>
+        // 存储当前年份
+        let currentYear = 2025;
+
         // 存储日程数据
         const schedules = {};
+
+        function changeYear(delta) {
+            currentYear += delta;
+            document.getElementById('currentYear').textContent = currentYear + '年';
+            createCalendar();
+        }
 
         function getLunarDate(year, month, day) {
             const lunar = Lunar.fromDate(new Date(year, month, day));
@@ -454,7 +541,7 @@
         }
 
         // 当用户点击窗口外部时关闭模态框
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target.className === 'modal') {
                 event.target.style.display = 'none';
             }
@@ -465,38 +552,38 @@
                 "一月", "二月", "三月", "四月", "五月", "六月",
                 "七月", "八月", "九月", "十月", "十一月", "十二月"
             ];
-            
+
             document.getElementById('monthModalTitle').textContent = `${year}年 ${monthNames[month]}`;
-            
+
             // 创建月视图内容
             const monthViewContent = document.getElementById('monthViewContent');
             monthViewContent.innerHTML = ''; // 清空现有内容
-            
+
             // 创建新的月历
             const monthDiv = createMonthCalendar(year, month, true);
             monthDiv.className = 'month month-view';
             monthViewContent.appendChild(monthDiv);
-            
+
             showModal('monthModal');
         }
 
         function showScheduleView(year, month, day) {
             const date = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             const lunarInfo = getLunarDate(year, month, day);
-            
-            document.getElementById('scheduleModalTitle').textContent = 
+
+            document.getElementById('scheduleModalTitle').textContent =
                 `${year}年${month + 1}月${day}日 农历${lunarInfo.isFirstDay ? lunarInfo.lunarMonth + '月' : lunarInfo.lunarDay}`;
-            
+
             // 更新日程列表
             updateScheduleList(date);
-            
+
             showModal('scheduleModal');
         }
 
         function updateScheduleList(date) {
             const scheduleList = document.getElementById('scheduleList');
             scheduleList.innerHTML = '';
-            
+
             if (schedules[date]) {
                 schedules[date].forEach((schedule, index) => {
                     const li = document.createElement('li');
@@ -539,6 +626,11 @@
             const monthDiv = document.createElement('div');
             monthDiv.className = 'month' + (isMonthView ? ' month-view' : '');
 
+            // 获取今天的日期
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+            const todayDate = today.getDate();
+
             if (!isMonthView) {
                 // 添加月份名称（仅在年视图中添加）
                 const monthName = document.createElement('div');
@@ -576,9 +668,9 @@
                 const prevDay = prevMonthLastDay - i;
                 const prevMonth = month - 1 < 0 ? 11 : month - 1;
                 const prevYear = month === 0 ? year - 1 : year;
-                
+
                 const lunarInfo = getLunarDate(prevYear, prevMonth, prevDay);
-                
+
                 dayDiv.innerHTML = `
                     <div class="solar">${prevDay}</div>
                     <div class="lunar">${lunarInfo.isFirstDay ? lunarInfo.lunarMonth + '月' : lunarInfo.lunarDay}</div>
@@ -594,6 +686,10 @@
                 const currentDay = new Date(year, month, day).getDay();
                 if (currentDay === 0 || currentDay === 6) {
                     dayDiv.className += ' weekend';
+                }
+                // 判断是否为今天
+                if (isCurrentMonth && day === todayDate) {
+                    dayDiv.className += ' today';
                 }
 
                 const lunarInfo = getLunarDate(year, month, day);
@@ -616,9 +712,9 @@
                 dayDiv.className = 'day other-month';
                 const nextMonth = month + 1 > 11 ? 0 : month + 1;
                 const nextYear = month === 11 ? year + 1 : year;
-                
+
                 const lunarInfo = getLunarDate(nextYear, nextMonth, i);
-                
+
                 dayDiv.innerHTML = `
                     <div class="solar">${i}</div>
                     <div class="lunar">${lunarInfo.isFirstDay ? lunarInfo.lunarMonth + '月' : lunarInfo.lunarDay}</div>
@@ -635,9 +731,9 @@
             const calendarDiv = document.getElementById('calendar');
             calendarDiv.innerHTML = ''; // 清空现有内容
 
-            // 创建 2025 年的所有月份
+            // 创建当前年份的所有月份
             for (let month = 0; month < 12; month++) {
-                const monthDiv = createMonthCalendar(2025, month);
+                const monthDiv = createMonthCalendar(currentYear, month);
                 calendarDiv.appendChild(monthDiv);
             }
         }
@@ -646,4 +742,5 @@
         createCalendar();
     </script>
 </body>
-</html> 
+
+</html>
